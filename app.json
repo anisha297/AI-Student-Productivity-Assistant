@@ -6,6 +6,11 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "scheme": "ai-student-productivity",
+    "plugins": [
+      "expo-router",
+      "expo-status-bar"
+    ],
     "ios": {
       "supportsTablet": true
     },
