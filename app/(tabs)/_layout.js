@@ -1,38 +1,76 @@
 import { Tabs } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useTheme } from 'react-native-paper';
 
 export default function TabLayout() {
-  const theme = useTheme();
-
   return (
-    <Tabs screenOptions={{ tabBarActiveTintColor: theme.colors.primary }}>
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor:   '#4F46E5',
+        tabBarInactiveTintColor: '#94A3B8',
+        tabBarStyle: {
+          backgroundColor: '#FFFFFF',
+          borderTopColor: '#E2E8F0',
+          height: 62,
+          paddingBottom: 10,
+          paddingTop: 8,
+        },
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '600',
+        },
+      }}
+    >
       <Tabs.Screen
         name="dashboard"
         options={{
-          title: 'Dashboard',
-          tabBarIcon: ({ color }) => <MaterialCommunityIcons name="view-dashboard" size={24} color={color} />,
+          title: 'Home',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons
+              name="view-dashboard-outline"
+              size={size}
+              color={color}
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="gmail"
         options={{
-          title: 'Gmail',
-          tabBarIcon: ({ color }) => <MaterialCommunityIcons name="gmail" size={24} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="calendar"
-        options={{
-          title: 'Calendar',
-          tabBarIcon: ({ color }) => <MaterialCommunityIcons name="calendar" size={24} color={color} />,
+          title: 'Email',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons
+              name="email-outline"
+              size={size}
+              color={color}
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="tasks"
         options={{
           title: 'Tasks',
-          tabBarIcon: ({ color }) => <MaterialCommunityIcons name="check-circle" size={24} color={color} />,
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons
+              name="checkbox-marked-circle-outline"
+              size={size}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="calendar"
+        options={{
+          title: 'Calendar',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons
+              name="calendar-month-outline"
+              size={size}
+              color={color}
+            />
+          ),
         }}
       />
     </Tabs>
