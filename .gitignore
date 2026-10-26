@@ -39,3 +39,20 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+
+# Local database files
+*.sqlite3
+
+# Debug and backup files
+*.log
+*.backup

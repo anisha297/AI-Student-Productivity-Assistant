@@ -14,32 +14,51 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import AppButton from '../components/AppButton';
 import { COLORS, SPACING, FONT, RADIUS } from '../constants/theme';
+import { useAuth } from '../context/AuthContext';
+import useGoogleAuth from '../services/googleAuth';
 
 export default function LoginScreen() {
-  const [email,        setEmail]        = useState('');
-  const [password,     setPassword]     = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [loading,      setLoading]      = useState(false);
-  const [errors,       setErrors]       = useState({});
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [generalError, setGeneralError] = useState('');
+
+  const { login } = useAuth();
+  const { signInWithGoogle } = useGoogleAuth();
 
   // ── Validation ─────────────────────────────────────────────
   const validate = () => {
     const e = {};
-    if (!email.trim())    e.email    = 'Email is required';
-    if (!password.trim()) e.password = 'Password is required';
+    if (!email.trim()) {
+      e.email = 'Email address is required';
+    } else if (!/\S+@\S+\.\S+/.test(email.trim())) {
+      e.email = 'Please enter a valid email address';
+    }
+
+    if (!password) {
+      e.password = 'Password is required';
+    }
+
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
-  // ── Login handler (UI-only placeholder) ────────────────────
-  const handleLogin = () => {
+  // ── Real Login handler ──────────────────────────────────────
+  const handleLogin = async () => {
+    setGeneralError('');
     if (!validate()) return;
+
     setLoading(true);
-    // Simulate brief loading, then navigate to dashboard
-    setTimeout(() => {
-      setLoading(false);
+    const result = await login(email, password);
+    setLoading(false);
+
+    if (result.success) {
       router.replace('/(tabs)/dashboard');
-    }, 800);
+    } else {
+      setGeneralError(result.error || 'Login failed. Please check your credentials.');
+    }
   };
 
   return (
@@ -71,6 +90,13 @@ export default function LoginScreen() {
               </Text>
             </View>
 
+            {/* General Error Banner */}
+            {generalError ? (
+              <View style={styles.errorBanner}>
+                <Text style={styles.errorBannerText}>{generalError}</Text>
+              </View>
+            ) : null}
+
             {/* ── Form ──────────────────────────────────────── */}
             <View style={styles.form}>
               {/* Email */}
@@ -80,6 +106,7 @@ export default function LoginScreen() {
                 onChangeText={(t) => {
                   setEmail(t);
                   setErrors((prev) => ({ ...prev, email: '' }));
+                  setGeneralError('');
                 }}
                 mode="outlined"
                 keyboardType="email-address"
@@ -102,6 +129,7 @@ export default function LoginScreen() {
                 onChangeText={(t) => {
                   setPassword(t);
                   setErrors((prev) => ({ ...prev, password: '' }));
+                  setGeneralError('');
                 }}
                 mode="outlined"
                 secureTextEntry={!showPassword}
@@ -123,7 +151,10 @@ export default function LoginScreen() {
               ) : null}
 
               {/* Forgot password */}
-              <TouchableOpacity style={styles.forgotWrap}>
+              <TouchableOpacity
+                style={styles.forgotWrap}
+                onPress={() => router.push('/forgot-password')}
+              >
                 <Text style={styles.forgotText}>Forgot Password?</Text>
               </TouchableOpacity>
 
@@ -144,7 +175,7 @@ export default function LoginScreen() {
               <AppButton
                 label="Continue with Google"
                 variant="google"
-                onPress={() => router.replace('/(tabs)/dashboard')}
+                onPress={signInWithGoogle}
                 style={styles.btnFull}
               />
             </View>
@@ -164,15 +195,15 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  root:  { flex: 1, backgroundColor: '#F8F9FF' },
-  safe:  { flex: 1 },
-  flex:  { flex: 1 },
+  root: { flex: 1, backgroundColor: '#F8F9FF' },
+  safe: { flex: 1 },
+  flex: { flex: 1 },
   scroll: { flexGrow: 1, padding: SPACING.lg },
 
-  back:     { marginBottom: SPACING.md },
+  back: { marginBottom: SPACING.md },
   backText: { color: COLORS.primary, fontSize: FONT.md, fontWeight: '600' },
 
-  header:    { alignItems: 'center', marginBottom: SPACING.xl },
+  header: { alignItems: 'center', marginBottom: SPACING.xl },
   iconBadge: {
     width: 72,
     height: 72,
@@ -183,11 +214,26 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   iconEmoji: { fontSize: 34 },
-  title:    { fontSize: FONT.xxxl, fontWeight: '800', color: '#0F172A', marginBottom: 6 },
+  title: { fontSize: FONT.xxxl, fontWeight: '800', color: '#0F172A', marginBottom: 6 },
   subtitle: { fontSize: FONT.md, color: '#64748B', textAlign: 'center' },
 
-  form:      { gap: SPACING.xs },
-  input:     { backgroundColor: '#FFFFFF', marginBottom: 2 },
+  errorBanner: {
+    backgroundColor: '#FEE2E2',
+    borderColor: '#FCA5A5',
+    borderWidth: 1,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.md,
+  },
+  errorBannerText: {
+    color: COLORS.danger,
+    fontSize: FONT.sm,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+
+  form: { gap: SPACING.xs },
+  input: { backgroundColor: '#FFFFFF', marginBottom: 2 },
   errorText: { color: COLORS.danger, fontSize: FONT.sm, marginBottom: 6, marginLeft: 4 },
 
   forgotWrap: { alignSelf: 'flex-end', marginBottom: SPACING.md, marginTop: 4 },
@@ -195,11 +241,11 @@ const styles = StyleSheet.create({
 
   btnFull: { width: '100%' },
 
-  dividerRow:   { flexDirection: 'row', alignItems: 'center', marginVertical: SPACING.md },
-  divider:      { flex: 1, height: 1, backgroundColor: COLORS.border },
+  dividerRow: { flexDirection: 'row', alignItems: 'center', marginVertical: SPACING.md },
+  divider: { flex: 1, height: 1, backgroundColor: COLORS.border },
   dividerLabel: { marginHorizontal: SPACING.sm, color: '#94A3B8', fontSize: FONT.sm },
 
-  signupRow:  { flexDirection: 'row', justifyContent: 'center', marginTop: SPACING.xl },
+  signupRow: { flexDirection: 'row', justifyContent: 'center', marginTop: SPACING.xl, paddingBottom: SPACING.lg },
   signupText: { color: '#64748B', fontSize: FONT.md },
   signupLink: { color: COLORS.primary, fontSize: FONT.md, fontWeight: '700' },
 });

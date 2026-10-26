@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,8 +11,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { COLORS, SPACING, FONT, RADIUS } from '../constants/theme';
+import GoogleServices from '../services/googleServices';
 
-const MOCK_COURSES = [
+// ── Demo Courses ──────────────────────────────────────────────
+const DEMO_COURSES = [
   { id: '1', name: 'Data Structures & Algorithms', code: 'CS301', pending: 2, color: '#4F46E5' },
   { id: '2', name: 'Software Engineering',          code: 'CS401', pending: 1, color: '#7C3AED' },
   { id: '3', name: 'Advanced Calculus',             code: 'MA201', pending: 3, color: '#0891B2' },
@@ -21,6 +23,32 @@ const MOCK_COURSES = [
 
 export default function ClassroomScreen() {
   const insets = useSafeAreaInsets();
+  const [coursesList, setCoursesList] = useState(DEMO_COURSES);
+  const [isGoogleConnected, setIsGoogleConnected] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadCourses = async () => {
+      const res = await GoogleServices.getClassroomCourses();
+      if (isMounted && res.success && res.courses && res.courses.length > 0) {
+        const colors = ['#4F46E5', '#7C3AED', '#0891B2', '#059669', '#EA580C'];
+        const mapped = res.courses.map((c, i) => {
+          const pendingCount = c.assignments?.filter((a) => !a.submission || a.submission.state !== 'TURNED_IN').length || 0;
+          return {
+            id: c.course_id || `course-${i}`,
+            name: c.course_name,
+            code: c.section || `C${i + 1}`,
+            pending: pendingCount,
+            color: colors[i % colors.length],
+          };
+        });
+        setCoursesList(mapped);
+        setIsGoogleConnected(true);
+      }
+    };
+    loadCourses();
+    return () => { isMounted = false; };
+  }, []);
 
   return (
     <View style={styles.root}>
@@ -41,12 +69,14 @@ export default function ClassroomScreen() {
             <MaterialCommunityIcons name="school-outline" size={48} color={COLORS.secondary} />
           </View>
           <Text style={styles.title}>Your Courses</Text>
-          <Text style={styles.subtitle}>Mock data — Google Classroom API in Phase 2</Text>
+          <Text style={styles.subtitle}>
+            {isGoogleConnected ? 'Synced with your Google Classroom account' : 'Track your enrolled courses and upcoming coursework'}
+          </Text>
         </View>
 
         {/* Course Cards */}
         <Text style={styles.sectionLabel}>ENROLLED COURSES</Text>
-        {MOCK_COURSES.map((course) => (
+        {coursesList.map((course) => (
           <View key={course.id} style={styles.courseCard}>
             <View style={[styles.courseLeft, { backgroundColor: course.color }]}>
               <Text style={styles.courseCode}>{course.code}</Text>
@@ -61,14 +91,23 @@ export default function ClassroomScreen() {
           </View>
         ))}
 
-        {/* Phase notice */}
-        <View style={styles.phaseCard}>
-          <MaterialCommunityIcons name="google-classroom" size={32} color={COLORS.secondary} />
-          <Text style={styles.phaseTitle}>Google Classroom API — Phase 2</Text>
-          <Text style={styles.phaseText}>
-            Real classroom data, assignment submissions, grade tracking, and announcement feeds
-            will be connected via the Google Classroom API in the next phase.
-          </Text>
+        {/* Sync Status Card */}
+        <View style={styles.syncCard}>
+          <MaterialCommunityIcons
+            name={isGoogleConnected ? 'check-decagram' : 'cloud-sync-outline'}
+            size={24}
+            color={COLORS.primary}
+          />
+          <View style={{ flex: 1, marginLeft: SPACING.md }}>
+            <Text style={styles.syncTitle}>
+              {isGoogleConnected ? 'Classroom Synced' : 'Classroom Sync'}
+            </Text>
+            <Text style={styles.syncText}>
+              {isGoogleConnected
+                ? 'Your coursework and assignments are up to date.'
+                : 'Connect your Google account in Settings to synchronize your university classroom data.'}
+            </Text>
+          </View>
         </View>
       </ScrollView>
     </View>
@@ -101,7 +140,16 @@ const styles = StyleSheet.create({
   courseName: { fontSize: FONT.md, fontWeight: '700', color: '#0F172A' },
   coursePending: { fontSize: FONT.sm, marginTop: 4, fontWeight: '600' },
 
-  phaseCard:  { backgroundColor: '#EEF2FF', borderRadius: RADIUS.lg, padding: SPACING.lg, alignItems: 'center', marginTop: SPACING.lg },
-  phaseTitle: { fontSize: FONT.lg, fontWeight: '800', color: COLORS.secondary, marginTop: SPACING.sm, marginBottom: SPACING.sm, textAlign: 'center' },
-  phaseText:  { color: '#64748B', fontSize: FONT.md, textAlign: 'center', lineHeight: 22 },
+  syncCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    marginTop: SPACING.lg,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  syncTitle: { fontSize: FONT.sm, fontWeight: '700', color: '#0F172A' },
+  syncText:  { fontSize: FONT.xs, color: '#64748B', marginTop: 2, lineHeight: 18 },
 });

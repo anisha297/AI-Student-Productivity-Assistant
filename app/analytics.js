@@ -60,13 +60,14 @@ export default function AnalyticsScreen() {
           ))}
         </View>
 
-        {/* Phase notice */}
-        <View style={styles.phaseCard}>
-          <MaterialCommunityIcons name="chart-line" size={32} color={COLORS.warning} />
-          <Text style={styles.phaseTitle}>📊 Full Analytics — Phase 2</Text>
-          <Text style={styles.phaseText}>
-            Real-time charts, weekly/monthly productivity trends, email activity heatmaps,
-            and AI-powered study recommendations will be available in Phase 2.
+        {/* Productivity Highlights */}
+        <View style={styles.summaryCard}>
+          <View style={styles.summaryHeader}>
+            <MaterialCommunityIcons name="trending-up" size={22} color={COLORS.primary} />
+            <Text style={styles.summaryTitle}>Productivity Highlights</Text>
+          </View>
+          <Text style={styles.summaryText}>
+            You have maintained strong momentum with task completion this week. Consistent study sessions and timely assignment reviews are boosting your overall ranking.
           </Text>
         </View>
       </ScrollView>
@@ -107,7 +108,19 @@ const styles = StyleSheet.create({
   statValue: { fontSize: FONT.xxl, fontWeight: '800', color: '#0F172A' },
   statLabel: { fontSize: FONT.sm, color: '#64748B', textAlign: 'center', marginTop: 4 },
 
-  phaseCard:  { backgroundColor: '#FFFBEB', borderRadius: RADIUS.lg, padding: SPACING.lg, alignItems: 'center' },
-  phaseTitle: { fontSize: FONT.lg, fontWeight: '800', color: COLORS.warning, marginTop: SPACING.sm, marginBottom: SPACING.sm, textAlign: 'center' },
-  phaseText:  { color: '#64748B', fontSize: FONT.md, textAlign: 'center', lineHeight: 22 },
+  summaryCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: RADIUS.lg,
+    padding: SPACING.lg,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  summaryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+    marginBottom: SPACING.xs,
+  },
+  summaryTitle: { fontSize: FONT.md, fontWeight: '700', color: '#0F172A' },
+  summaryText:  { color: '#64748B', fontSize: FONT.sm, lineHeight: 20 },
 });

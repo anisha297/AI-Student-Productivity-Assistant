@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,12 +6,15 @@ import {
   ScrollView,
   Image,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import AppButton from '../components/AppButton';
 import FeatureCard from '../components/FeatureCard';
-import { SPACING, FONT, RADIUS } from '../constants/theme';
+import { SPACING, FONT, RADIUS, COLORS } from '../constants/theme';
+import { useAuth } from '../context/AuthContext';
+import useGoogleAuth from '../services/googleAuth';
 
 const FEATURES = [
   {
@@ -53,6 +56,23 @@ const FEATURES = [
 ];
 
 export default function WelcomeScreen() {
+  const { isAuthenticated, isLoading } = useAuth();
+  const { signInWithGoogle } = useGoogleAuth();
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      router.replace('/(tabs)/dashboard');
+    }
+  }, [isAuthenticated, isLoading]);
+
+  if (isLoading) {
+    return (
+      <View style={[styles.root, styles.center]}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.root}>
       <StatusBar barStyle="light-content" backgroundColor="#0F172A" />
@@ -105,7 +125,7 @@ export default function WelcomeScreen() {
             <AppButton
               label="Continue with Google"
               variant="google"
-              onPress={() => router.push('/login')}
+              onPress={signInWithGoogle}
               style={styles.btnFull}
             />
           </View>
@@ -140,6 +160,10 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: '#0F172A',
+  },
+  center: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
   // ── Hero ──

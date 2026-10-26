@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,9 +11,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { COLORS, SPACING, FONT, RADIUS } from '../../constants/theme';
+import GoogleServices from '../../services/googleServices';
 
-// ── Mock Data ─────────────────────────────────────────────────
-const EMAILS = [
+// ── Demo Emails ───────────────────────────────────────────────
+const DEMO_EMAILS = [
   {
     id: '1',
     from: 'Prof. Johnson',
@@ -98,15 +99,42 @@ const badge = StyleSheet.create({
 export default function GmailScreen() {
   const insets              = useSafeAreaInsets();
   const [activeFilter, setFilter] = useState('All');
+  const [emailList, setEmailList] = useState(DEMO_EMAILS);
+  const [loading, setLoading] = useState(false);
+  const [isGoogleConnected, setIsGoogleConnected] = useState(false);
 
-  const filtered = EMAILS.filter((e) => {
+  useEffect(() => {
+    let isMounted = true;
+    const loadGoogleEmails = async () => {
+      setLoading(true);
+      const res = await GoogleServices.getGmailMessages(15);
+      if (isMounted && res.success && res.emails && res.emails.length > 0) {
+        const mapped = res.emails.map((e) => ({
+          id: e.id,
+          from: e.sender,
+          subject: e.subject,
+          preview: e.snippet,
+          time: e.date,
+          tag: e.labels?.includes('IMPORTANT') ? 'important' : null,
+          read: !e.labels?.includes('UNREAD'),
+        }));
+        setEmailList(mapped);
+        setIsGoogleConnected(true);
+      }
+      if (isMounted) setLoading(false);
+    };
+    loadGoogleEmails();
+    return () => { isMounted = false; };
+  }, []);
+
+  const filtered = emailList.filter((e) => {
     if (activeFilter === 'Important') return e.tag === 'important';
     if (activeFilter === 'Phishing')  return e.tag === 'phishing';
     if (activeFilter === 'Unread')    return !e.read;
     return true;
   });
 
-  const phishingCount = EMAILS.filter((e) => e.tag === 'phishing').length;
+  const phishingCount = emailList.filter((e) => e.tag === 'phishing').length;
 
   return (
     <View style={styles.root}>
@@ -117,9 +145,10 @@ export default function GmailScreen() {
         <View>
           <Text style={styles.heading}>AI Email Assistant</Text>
           <Text style={styles.subheading}>
-            {EMAILS.length} emails · {phishingCount} threats detected
+            {isGoogleConnected ? `${emailList.length} emails synced` : `${emailList.length} preview emails`} · {phishingCount} threats detected
           </Text>
         </View>
+
         <TouchableOpacity style={styles.scanBtn}>
           <MaterialCommunityIcons name="shield-search" size={18} color={COLORS.primary} />
           <Text style={styles.scanBtnText}> Scan</Text>
@@ -159,6 +188,13 @@ export default function GmailScreen() {
         contentContainerStyle={{ padding: SPACING.md, paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
         ItemSeparatorComponent={() => <View style={{ height: SPACING.sm }} />}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <MaterialCommunityIcons name="email-check-outline" size={48} color="#94A3B8" />
+            <Text style={styles.emptyTitle}>No emails in this category</Text>
+            <Text style={styles.emptySub}>All emails have been reviewed</Text>
+          </View>
+        }
         renderItem={({ item }) => (
           <TouchableOpacity
             style={[
@@ -166,7 +202,7 @@ export default function GmailScreen() {
               !item.read           && styles.emailUnread,
               item.tag === 'phishing' && styles.emailPhishing,
             ]}
-            onPress={() => router.push('/email-details')}
+            onPress={() => router.push({ pathname: '/email-details', params: { id: item.id } })}
             activeOpacity={0.8}
           >
             {/* Avatar */}
@@ -282,4 +318,22 @@ const styles = StyleSheet.create({
   emailTime:    { fontSize: FONT.sm, color: '#94A3B8' },
   emailSubject: { fontSize: FONT.sm, color: '#334155', marginTop: 2 },
   emailPreview: { fontSize: FONT.sm, color: '#94A3B8', marginTop: 2 },
+
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: SPACING.xl,
+    paddingHorizontal: SPACING.lg,
+  },
+  emptyTitle: {
+    fontSize: FONT.md,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginTop: SPACING.md,
+  },
+  emptySub: {
+    fontSize: FONT.sm,
+    color: '#64748B',
+    marginTop: 4,
+  },
 });
